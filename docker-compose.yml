@@ -1,0 +1,59 @@
+version: "3.7"
+services:
+    app:
+        build:
+            args:
+                user: sammy
+                uid: 1000
+            context: ./
+            dockerfile: Dockerfile
+        image: data_boost
+        container_name: data_boost_app
+        restart: unless-stopped
+        working_dir: /var/www/
+        volumes:
+            - ./:/var/www
+            - ./docker-compose/php/php.ini:/usr/local/etc/php/php.ini
+        networks:
+            - data_boost
+
+    db:
+        image: mysql:5.7
+        container_name: data_boost_db
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_USER: ${DB_USERNAME}
+            SERVICE_TAGS: dev
+            SERVICE_NAME: mysql
+        networks:
+            - data_boost
+
+    nginx:
+        image: nginx:alpine
+        container_name: data_boost_nginx
+        restart: unless-stopped
+        ports:
+            - "8000:80"
+        volumes:
+            - ./:/var/www
+            - ./docker-compose/nginx:/etc/nginx/conf.d/
+        networks:
+            - data_boost
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: data_boost_phpmyadmin
+        restart: unless-stopped
+        ports:
+            - "3400:80"
+        depends_on:
+            - db
+        networks:
+            - data_boost
+
+networks:
+    data_boost:
+        driver: bridge
